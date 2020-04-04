@@ -20,7 +20,7 @@
 2. 해당 issue 번호로 branch 생성 후 해당 내용 작업
 예시) feature/#1
 
-3. master로 push
+3. 해당 branch로 push 후 master branch에 PR날리기
 
 4. code review 및 merge
 
