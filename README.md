@@ -15,9 +15,11 @@
 ## Branch rule
 
 1. issue 작성
+
 예시) [dataloader] augmentation 기능 추가
 
 2. 해당 issue 번호로 branch 생성 후 해당 내용 작업
+
 예시) feature/#1
 
 3. 해당 branch로 push 후 master branch에 PR날리기
