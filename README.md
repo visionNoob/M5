@@ -10,11 +10,17 @@
 
 - install
 
+  ```
+  pip install -r requirements.txt
+  pre-commit install
+  ```
+
+  
+
 - train
 
 - inference
 
-  
 
 ## Branch rule
 
