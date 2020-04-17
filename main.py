@@ -1,40 +1,90 @@
-import wandb
+import os
+
+import joblib
+import numpy as np
 import pandas as pd
-from dataframe_manager import date_features, sales_features, demand_features
-from utils import read_data, train_model, evaluate_model
-from dataloader import DataLoading
-from model import LSTM
 import torch
 import torch.nn as nn
-import os
-from tqdm import tqdm
-import numpy as np
-import joblib
+import wandb
 from sklearn import preprocessing
+from tqdm import tqdm
+
+from dataframe_manager import date_features
+from dataframe_manager import demand_features
+from dataframe_manager import sales_features
+from dataloader import DataLoading
+from model import LSTM
+from utils import evaluate_model
+from utils import read_data
+from utils import train_model
 
 
-DEVICE = "cuda"
-TRAIN_BATCH_SIZE = 512
-TEST_BATCH_SIZE = 128
-EPOCHS = 1
-start_e = 1
+def define_argparser():
+    import argparse
+
+    p = argparse.ArgumentParser()
+
+    p.add_argument(
+        "--state", default="CA_1", type=str, help="어떤 state를 선택할 것인가?",
+    )
+
+    p.add_argument(
+        "--batch_size", default=512, type=int, help="batch_size",
+    )
+
+    p.add_argument(
+        "--device", default="cuda", type=str, help="gpu_device",
+    )
+
+    p.add_argument(
+        "--n_epochs", default=10, type=int, help="전체 epochs 수",
+    )
+
+    p.add_argument(
+        "--lr", default=1e-4, type=float, help="learning rate",
+    )
+
+    config = p.parse_args()
+
+    return config
 
 
 def criterion1(pred1, targets):
     l1 = nn.MSELoss()(pred1, targets)
     return l1
 
+
 if __name__ == "__main__":
-    calendar, sell_prices, sales_train_validation, submission = read_data("./data/m5-forecasting-accuracy")
-    sales_train_validation_melt = pd.melt(sales_train_validation, id_vars=['id', 'item_id', 'dept_id', 'cat_id', 'store_id', 'state_id'], var_name='day', value_name='demand')
-    
-    sales_CA_1 = sales_train_validation_melt[sales_train_validation_melt.store_id == "CA_1"]
+
+    config = define_argparser()
+    wandb.init()
+    wandb.config.update(config)
+
+    calendar, sell_prices, sales_train_validation, submission = read_data(
+        "./data/m5-forecasting-accuracy",
+    )
+    sales_train_validation_melt = pd.melt(
+        sales_train_validation,
+        id_vars=["id", "item_id", "dept_id", "cat_id", "store_id", "state_id"],
+        var_name="day",
+        value_name="demand",
+    )
+
+    sales_CA_1 = sales_train_validation_melt[
+        sales_train_validation_melt.store_id == config.state
+    ]
     new_CA_1 = pd.merge(sales_CA_1, calendar, left_on="day", right_on="d", how="left")
-    new_CA_1 = pd.merge(new_CA_1, sell_prices, left_on=["store_id", "item_id", "wm_yr_wk"],right_on=["store_id", "item_id", "wm_yr_wk"], how="left")
+    new_CA_1 = pd.merge(
+        new_CA_1,
+        sell_prices,
+        left_on=["store_id", "item_id", "wm_yr_wk"],
+        right_on=["store_id", "item_id", "wm_yr_wk"],
+        how="left",
+    )
     new_CA_1["day_int"] = new_CA_1.day.apply(lambda x: int(x.split("_")[-1]))
 
     CA1 = new_CA_1
-    CA1 = CA1[["item_id","day_int", "demand", "sell_price", "date"]]
+    CA1 = CA1[["item_id", "day_int", "demand", "sell_price", "date"]]
     CA1.fillna(0, inplace=True)
 
     data_info = CA1[["item_id", "day_int"]]
@@ -42,7 +92,7 @@ if __name__ == "__main__":
     # total number of days -> 1913
     # for training we are taking data between 1800 < train <- 1913-28-28 = 1857
 
-    train_df = data_info[(1800 < data_info.day_int) &( data_info.day_int < 1857)]
+    train_df = data_info[(1800 < data_info.day_int) & (data_info.day_int < 1857)]
 
     # valid data is given last day -> 1885 we need to predict next 28days
 
@@ -68,34 +118,43 @@ if __name__ == "__main__":
     n = datac.__getitem__(100)
     print(n["features"].shape, n["label"].shape)
     model = LSTM()
-    model.to(DEVICE)
+    model.to(config.device)
 
     train_dataset = DataLoading(train_df, label)
 
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset,
-        batch_size= TRAIN_BATCH_SIZE,
+        batch_size=config.batch_size,
         shuffle=True,
         num_workers=4,
-        drop_last=True
+        drop_last=True,
     )
-
 
     valid_dataset = DataLoading(valid_df, label)
 
     valid_loader = torch.utils.data.DataLoader(
         dataset=valid_dataset,
-        batch_size= TEST_BATCH_SIZE,
+        batch_size=config.batch_size,
         shuffle=False,
         num_workers=4,
-        drop_last=True
+        drop_last=True,
     )
 
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config.lr)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, patience=5, mode="min", factor=0.7, verbose=True, min_lr=1e-5,
+    )
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, mode='min', factor=0.7, verbose=True, min_lr=1e-5)
-
-    for epoch in range(start_e, EPOCHS+1):
-        train_model(model, train_loader, criterion1, optimizer, epoch, scheduler=scheduler, history=None)
-        evaluate_model(model, valid_loader, criterion1, epoch, scheduler=scheduler, history=None)
-
+    for epoch in range(1, config.n_epochs + 1):
+        train_model(
+            model,
+            train_loader,
+            criterion1,
+            optimizer,
+            epoch,
+            scheduler=scheduler,
+            history=None,
+        )
+        evaluate_model(
+            model, valid_loader, criterion1, epoch, scheduler=scheduler, history=None,
+        )
