@@ -26,6 +26,12 @@ def sales_features(
         df: pd.DataFrame
     '''
     for window in mean_windows:
+        df['rolling_price_mean_t' + str(window)] = df["sell_price"].transform(lambda x: x.rolling(window).mean())
+
+    for window in std_windows:
+        df['rolling_price_std_t' + str(window)] = df['sell_price'].transform(lambda x: x.rolling(window).std())
+    df.sell_price.fillna(0, inplace=True)
+    
         df['rolling_mean_t' + str(window)] = df["demand"].transform(lambda x: x.rolling(window).mean())
 
     for window in std_windows:
