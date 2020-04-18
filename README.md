@@ -15,7 +15,13 @@
   pre-commit install
   ```
 
-  
+- wandb login
+
+  ```
+  wandb login
+  ```
+
+  wandb 계정을 생성한후, setting의 API key를 입력합니다.
 
 - train
 
@@ -69,7 +75,7 @@
 
   - kaggle competition에서 채점에 사용되는 데이터와의 분포가 다를 수 있으므로, 수시로 check해줍니다.
 
-    
+
 
 
 
@@ -84,4 +90,3 @@ github project는 칸반보드를 제공합니다.  칸반보드는 각 구성�
 
 
 **각 구성원의 책임감있는 모습을 기대하며, 모두 화이팅입니다. :)**
-
