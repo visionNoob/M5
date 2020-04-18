@@ -19,7 +19,7 @@ from utils import read_data
 from utils import train_model
 
 
-def define_argparser():
+def get_config():
     import argparse
 
     p = argparse.ArgumentParser()
