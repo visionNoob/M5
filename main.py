@@ -56,7 +56,8 @@ def criterion1(pred1, targets):
 
 if __name__ == "__main__":
 
-    config = define_argparser()
+    config = get_config()
+```
     wandb.init()
     wandb.config.update(config)
 
