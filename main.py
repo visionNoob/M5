@@ -44,6 +44,10 @@ def get_config():
         "--lr", default=1e-4, type=float, help="learning rate",
     )
 
+    p.add_argument(
+        "--wandb", default=False, type=bool, help="Use wandb option",
+    )
+
     config = p.parse_args()
 
     return config
@@ -57,8 +61,9 @@ def criterion1(pred1, targets):
 if __name__ == "__main__":
 
     config = get_config()
-    wandb.init()
-    wandb.config.update(config)
+    if config.wandb:
+        wandb.init()
+        wandb.config.update(config)
 
     calendar, sell_prices, sales_train_validation, submission = read_data(
         "./data/m5-forecasting-accuracy",
@@ -146,7 +151,7 @@ if __name__ == "__main__":
     )
 
     for epoch in range(1, config.n_epochs + 1):
-        train_model(
+        train_loss = train_model(
             model,
             train_loader,
             criterion1,
@@ -155,6 +160,13 @@ if __name__ == "__main__":
             scheduler=scheduler,
             history=None,
         )
-        evaluate_model(
+
+        if config.wandb:
+            wandb.log({"train_loss": train_loss})
+
+        val_loss = evaluate_model(
             model, valid_loader, criterion1, epoch, scheduler=scheduler, history=None,
         )
+
+        if config.wandb:
+            wandb.log({"val_loss": val_loss})

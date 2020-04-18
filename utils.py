@@ -34,6 +34,8 @@ def train_model(
         {"train_loss": loss.data.cpu().numpy() / len(train_loader)},
     )
 
+    return loss.data.cpu().numpy() / len(train_loader)
+
 
 def evaluate_model(model, val_loader, criterion, epoch, scheduler=None, history=None):
     model.eval()
@@ -60,13 +62,11 @@ def evaluate_model(model, val_loader, criterion, epoch, scheduler=None, history=
                 real_list.append(real)
 
     loss /= len(val_loader)
-    wandb.log(
-        {"val_loss": loss},
-    )
     if scheduler is not None:
         scheduler.step(loss)
-
     print(f"\n Dev loss: %.4f RMSE : %.4f" % (loss, np.mean(RMSE_list)))
+
+    return loss
 
 
 def reduce_mem_usage(df: pd.DataFrame, verbose=True):
