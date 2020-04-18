@@ -30,9 +30,6 @@ def train_model(
             history.loc[epoch + i / len(train_loader), "lr"] = optimizer.state_dict()["param_groups"][0]["lr"]
         loss.backward()
         optimizer.step()
-    wandb.log(
-        {"train_loss": loss.data.cpu().numpy() / len(train_loader)},
-    )
 
     return loss.data.cpu().numpy() / len(train_loader)
 
