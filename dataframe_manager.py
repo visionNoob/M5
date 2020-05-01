@@ -50,6 +50,32 @@ def make_normal_lag(lag_day):
     NotImplemented
     
 
+def merge_by_concat(
+    df1: pd.DataFrame, 
+    df2: pd.DataFrame, 
+    merge_on: list
+):
+    merged_gf = df1[merge_on]
+    merged_gf = merged_gf.merge(df2, on=merge_on, how='left')
+    new_columns = [col for col in list(merged_gf) if col not in merge_on]
+    df1 = pd.concat([df1, merged_gf[new_columns]], axis=1)
+    return df1
+
+
+def cutoff(df: pd.DataFrame, price_df: pd.DataFrame):
+    
+    release_df = prices_df.groupby(['store_id','item_id'])['wm_yr_wk'].agg(['min']).reset_index()
+    release_df.columns = ['store_id','item_id','release']
+    df = merge_by_concat(df, release_df, ['store_id','item_id'])
+    
+    del release_df
+
+    df = df[df['wm_yr_wk']>=df['release']]
+    df = df.reset_index(drop=True)
+    df['release'] = df['release'] - df['release'].min()
+    df['release'] = df['release'].astype(np.int16)
+    return df
+
 
 def date_features(df: pd.DataFrame):
 
@@ -61,6 +87,30 @@ def date_features(df: pd.DataFrame):
 
     return df
 
+def price_features(
+    prices_df: pd.DataFrame,
+    calendar_df: pd.DataFrame
+):
+    '''
+    For unit item and store_id
+    '''
+    prices_df['price_max'] = prices_df.groupby(['store_id','item_id'])['sell_price'].transform('max')
+    prices_df['price_min'] = prices_df.groupby(['store_id','item_id'])['sell_price'].transform('min')
+    prices_df['price_std'] = prices_df.groupby(['store_id','item_id'])['sell_price'].transform('std')
+    prices_df['price_mean'] = prices_df.groupby(['store_id','item_id'])['sell_price'].transform('mean')
+    prices_df['price_norm'] = prices_df['sell_price']/prices_df['price_max']
+    
+    calendar_prices = calendar_df[['wm_yr_wk','month','year']]
+    calendar_prices = calendar_prices.drop_duplicates(subset=['wm_yr_wk'])
+    prices_df = prices_df.merge(calendar_prices[['wm_yr_wk','month','year']], on=['wm_yr_wk'], how='left')
+    del calendar_prices
+    
+    prices_df['price_momentum'] = prices_df['sell_price']/prices_df.groupby(['store_id','item_id'])['sell_price'].transform(lambda x: x.shift(1))
+    prices_df['price_momentum_m'] = prices_df['sell_price']/prices_df.groupby(['store_id','item_id','month'])['sell_price'].transform('mean')
+    prices_df['price_momentum_y'] = prices_df['sell_price']/prices_df.groupby(['store_id','item_id','year'])['sell_price'].transform('mean')
+    prices_df['price_nunique'] = prices_df.groupby(['store_id','item_id'])['sell_price'].transform('nunique')
+    prices_df['item_nunique'] = prices_df.groupby(['store_id','sell_price'])['item_id'].transform('nunique')
+    return prices_df
 
 def sales_features(
     df: pd.DataFrame,
@@ -68,6 +118,7 @@ def sales_features(
     std_windows: list,
 ):
     '''
+    For unit item
     Args:
         df: pd.DataFrame
         mean_windows: List of rolling mean window_size, list
@@ -113,3 +164,4 @@ def demand_features(
 
     df.fillna(0, inplace=True)
     return df
+
