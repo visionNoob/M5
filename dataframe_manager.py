@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.decomposition import PCA
 
-TARGET = 'sales'
+TARGET = 'demand'
 SEED = 1
 
 def make_pca(
@@ -11,11 +11,11 @@ def make_pca(
     keep_dim: int = 3
 ):
     print('PCA:', pca_col, n_days)
-    pca_df = df[[pca_col, 'd', TARGET]]
+    pca_df = df[[pca_col, 'day_int', TARGET]]
 
-    if pca_col != 'id':
-        merge_base = pca_df[[pca_col,'d']]
-        pca_df = pca_df.groupby([pca_col,'d'])[TARGET].agg(['sum']).reset_index()
+    if pca_col != 'item_id':
+        merge_base = pca_df[[pca_col,'day_int']]
+        pca_df = pca_df.groupby([pca_col,'d_int'])[TARGET].agg(['sum']).reset_index()
         pca_df[TARGET] = pca_df['sum']
         del pca_df['sum']
 
@@ -31,13 +31,13 @@ def make_pca(
             })
     
     res_cols = list(pca_df)[3:]
-    pca_df[pca_columns] = pca_df[pca_columns].fillna(0)
+    pca_df[res_cols] = pca_df[res_cols].fillna(0)
     
     # define PCA
     pca = PCA(random_state=SEED)
     pca.fit(pca_df[res_cols])
     pca_df[res_cols] = pca.transform(pca_df[res_cols])
-    print("Explained variance ratio: ", pca.explained_variance_ratio)
+    print("Explained variance ratio: ", pca.explained_variance_ratio_)
     
     keep_cols = res_cols[:keep_dim]
     print("Columns to keep: ", keep_cols)
@@ -80,7 +80,6 @@ def sales_features(
 
     for window in std_windows:
         df['rolling_price_std_t' + str(window)] = df['sell_price'].transform(lambda x: x.rolling(window).std())
-    df.sell_price.fillna(0, inplace=True)
         df['rolling_mean_t' + str(window)] = df["demand"].transform(lambda x: x.rolling(window).mean())
 
     for window in std_windows:
