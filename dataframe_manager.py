@@ -42,7 +42,7 @@ def make_pca(
     keep_cols = res_cols[:keep_dim]
     print("Columns to keep: ", keep_cols)
 
-    return pca_df[keep_cols]
+    return pd.concat([df, pca_df[keep_cols]], axis=1)
 
 
 
@@ -81,7 +81,6 @@ def sales_features(
     for window in std_windows:
         df['rolling_price_std_t' + str(window)] = df['sell_price'].transform(lambda x: x.rolling(window).std())
     df.sell_price.fillna(0, inplace=True)
-    
         df['rolling_mean_t' + str(window)] = df["demand"].transform(lambda x: x.rolling(window).mean())
 
     for window in std_windows:
