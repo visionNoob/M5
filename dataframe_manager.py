@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.decomposition import PCA
+import numpy as np
 
 TARGET = 'demand'
 SEED = 1
@@ -63,7 +64,9 @@ def merge_by_concat(
 
 
 def cutoff(df: pd.DataFrame, price_df: pd.DataFrame):
-    
+    '''
+    release 안된 부분을 제거
+    '''
     release_df = prices_df.groupby(['store_id','item_id'])['wm_yr_wk'].agg(['min']).reset_index()
     release_df.columns = ['store_id','item_id','release']
     df = merge_by_concat(df, release_df, ['store_id','item_id'])
@@ -80,9 +83,14 @@ def cutoff(df: pd.DataFrame, price_df: pd.DataFrame):
 def date_features(df: pd.DataFrame):
 
     df["date"] = pd.to_datetime(df["date"])
-    df["day"] = df.date.dt.day
-    df["month"] = df.date.dt.month
+    df["day"] = df.date.dt.day.astype(np.int8)
+    df["month"] = df.date.dt.month.astype(np.int8)
+    df['year'] = df.date.dt.year.astype(np.int8)
+    df['year'] = (df['year'] - df['year'].min()).astype(np.int8)
     df["week_day"] = df.date.dt.weekday
+    df["week_day"] = (df['week_day'] >= 5).astype(np.int8)
+    df['week'] = df.date.dt.week
+
     df.drop(columns="date", inplace=True)
 
     return df
