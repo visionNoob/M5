@@ -66,6 +66,13 @@ def evaluate_model(model, val_loader, criterion, epoch, scheduler=None, history=
     return loss
 
 
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
+    
 def reduce_mem_usage(df: pd.DataFrame, verbose=True):
     """
     For efficient memory usage, set the df data type.
