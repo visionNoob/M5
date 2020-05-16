@@ -63,7 +63,7 @@ def merge_by_concat(
     return df1
 
 
-def cutoff(df: pd.DataFrame, price_df: pd.DataFrame):
+def cutoff(df: pd.DataFrame, prices_df: pd.DataFrame):
     '''
     release 안된 부분을 제거
     '''
@@ -94,6 +94,7 @@ def date_features(df: pd.DataFrame):
     df.drop(columns="date", inplace=True)
 
     return df
+
 
 def price_features(
     prices_df: pd.DataFrame,
