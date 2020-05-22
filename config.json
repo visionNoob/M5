@@ -1,0 +1,88 @@
+{
+    "name": "darker_magic_porting",
+    "n_gpu": 1,
+    "ver": 1,
+    "seed": 42,
+    "dstpath": "./",
+    "arch": {
+        "type": "lightgbm",
+        "args": {
+            "boosting_type": "gbdt",
+            "objective": "tweedie",
+            "tweedie_variance_power": 1.1,
+            "metric": "rmse",
+            "subsample": 0.5,
+            "subsample_freq": 1,
+            "learning_rate": 0.03,
+            "num_leaves": 2047,
+            "min_data_in_leaf": 4095,
+            "feature_fraction": 0.5,
+            "max_bin": 100,
+            "n_estimators": 1400,
+            "boost_from_average": false,
+            "verbose": -1
+        }
+    },
+    "data_loader": {
+        "type": "darker_magic",
+        "start_train": 0,
+        "end_train": 1913,
+        "p_horizon": 28,
+        "target": "sales",
+        "path_original": "./input/m5-forecasting-accuracy/",
+        "path_simple_fe": "./input/m5-simple-fe/",
+        "path_lags": "./input/m5-lags-features",
+        "path_custom": "./input/m5-custom-features",
+        "remove_features": [
+            "id",
+            "state_id",
+            "store_id",
+            "date",
+            "wm_yr_wk",
+            "d"
+        ],
+        "mean_features": [
+            "enc_cat_id_mean",
+            "enc_cat_id_std",
+            "enc_dept_id_mean",
+            "enc_dept_id_std",
+            "enc_item_id_mean",
+            "enc_item_id_std"
+        ],
+        "args": {
+            "data_dir": "data/",
+            "batch_size": 128,
+            "shuffle": true,
+            "validation_split": 0.1,
+            "num_workers": 2
+        }
+    },
+    "optimizer": {
+        "type": "Adam",
+        "args": {
+            "lr": 0.001,
+            "weight_decay": 0,
+            "amsgrad": true
+        }
+    },
+    "loss": "nll_loss",
+    "metrics": [
+        "accuracy",
+        "top_k_acc"
+    ],
+    "lr_scheduler": {
+        "type": "StepLR",
+        "args": {
+            "step_size": 50,
+            "gamma": 0.1
+        }
+    },
+    "trainer": {
+        "use_aux": true,
+        "save_dir": "saved/",
+        "save_period": 1,
+        "verbosity": 2,
+        "monitor": "min val_loss",
+        "early_stop": 10
+    }
+}
