@@ -1,9 +1,6 @@
 # IDE
 .vscode
 
-# Data
-data/
-
 *.pkl
 
 saved/
