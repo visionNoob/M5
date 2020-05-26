@@ -1,5 +1,16 @@
 # IDE
 .vscode
 
-# Data
-data/
+*.pkl
+
+saved/
+
+*.bin
+
+output/
+
+*.pyc
+
+calendar.csv
+sales_train_validation.csv
+sell_prices.csv
