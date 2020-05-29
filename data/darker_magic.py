@@ -11,13 +11,13 @@ from data.util import make_lag_roll
 
 def get_dataset(config):
     store_id = config["data_loader"]["store_id"]
-    BASE = os.path.join(config["data_loader"]["path_simple_fe"], "grid_part_1.pkl")
-    PRICE = os.path.join(config["data_loader"]["path_simple_fe"], "grid_part_2.pkl")
-    CALENDAR = os.path.join(config["data_loader"]["path_simple_fe"], "grid_part_3.pkl")
+    BASE = os.path.join(config["data_loader"]["path_simple_fe"], "grid_part_1.pkl") if config["data_loader"]["path_simple_fe"] else None
+    PRICE = os.path.join(config["data_loader"]["path_simple_fe"], "grid_part_2.pkl") if config["data_loader"]["path_simple_fe"] else None
+    CALENDAR = os.path.join(config["data_loader"]["path_simple_fe"], "grid_part_3.pkl") if config["data_loader"]["path_simple_fe"] else None
     MEAN_ENC = os.path.join(
         config["data_loader"]["path_custom"], "mean_encoding_df.pkl"
-    )
-    LAGS = os.path.join(config["data_loader"]["path_lags"], "lags_df_28.pkl")
+    ) if config["data_loader"]["path_custom"] else None
+    LAGS = os.path.join(config["data_loader"]["path_lags"], "lags_df_28.pkl") if config["data_loader"]["path_lags"] else None
     TARGET = config["data_loader"]["target"]
     mean_features = config["data_loader"]["mean_features"]
     remove_features = config["data_loader"]["remove_features"]

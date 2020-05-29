@@ -55,17 +55,17 @@ def get_data_by_store(
     # As our Features Grids are aligned
     # we can use index to keep only necessary rows
     # Alignment is good for us as concat uses less memory than merge.
-    df2 = pd.read_pickle(MEAN_ENC)[mean_features]
-    df2 = df2[df2.index.isin(df.index)]
-
-    df3 = pd.read_pickle(LAGS).iloc[:, 3:]
-    df3 = df3[df3.index.isin(df.index)]
-
-    df = pd.concat([df, df2], axis=1)
-    del df2  # to not reach memory limit
-
-    df = pd.concat([df, df3], axis=1)
-    del df3  # to not reach memory limit
+    if MEAN_ENC:
+        df2 = pd.read_pickle(MEAN_ENC)[mean_features]
+        df2 = df2[df2.index.isin(df.index)]
+        df = pd.concat([df, df2], axis=1)
+        del df2  # to not reach memory limit
+    
+    if LAGS:
+        df3 = pd.read_pickle(LAGS).iloc[:, 3:]
+        df3 = df3[df3.index.isin(df.index)]
+        df = pd.concat([df, df3], axis=1)
+        del df3  # to not reach memory limit
 
     # Create features list
     features = [col for col in list(df) if col not in remove_features]
