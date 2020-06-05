@@ -12,7 +12,10 @@ from multiprocessing import Pool
 from parse_config import ConfigParser
 from data.util import seed_everything
 from data.dataset_factory import get_dataset
+from sklearn.metrics import mean_squared_error
 import time
+import wandb
+from wandb.lightgbm import wandb_callback
 
 warnings.filterwarnings("ignore")
 
@@ -27,28 +30,32 @@ def main(config):
     STORES_IDS = list(STORES_IDS.unique())
 
     for store_id in STORES_IDS:
+        run = wandb.init(reinit=True)
+        with run:
+            config["data_loader"]["store_id"] = store_id
+            logger.info("Getting Dataset..")
+            start = time.time()
+            X_train, y_train, X_test, y_test = gt_dataset(config)
+            end = time.time() - start
+            logger.info(f"Done! (elaped:{end} sec!)")
 
-        config["data_loader"]["store_id"] = store_id
-        logger.info("Getting Dataset..")
-        start = time.time()
-        X_train, y_train, X_test, y_test = get_dataset(config)
-        end = time.time() - start
-        logger.info(f"Done! (elaped:{end} sec!)")
-
-        logger.info(f"Start Training")
-        seed_everything(SEED)
-        model.fit(
-            X_train,
-            y_train,
-            eval_set=[(X_test, y_test)],
-            eval_metric="rmse",
-            early_stopping_rounds=5,
-        )
+            logger.info(f"Start Training")
+            seed_everything(SEED)
+            model.fit(
+                X_train,
+                y_train,
+                eval_set=[(X_test, y_test)],
+                eval_metric="rmse",
+                early_stopping_rounds=5,
+                callbacks = [wandb_callback]
+            )
+            
 
         model_name = "lgb_model_" + store_id + "_v" + str(1) + ".bin"
         pickle.dump(model, open(model_name, "wb"))
         # pickle.dump(estimator, open(model_name, "wb"))
 
+        
         del X_train, y_train, X_test, y_test, model
         gc.collect()
 
