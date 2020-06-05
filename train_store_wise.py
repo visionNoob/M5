@@ -15,6 +15,7 @@ from data.dataset_factory import get_dataset
 from sklearn.metrics import mean_squared_error
 import time
 import wandb
+from wandb.lightgbm import wandb_callback
 
 warnings.filterwarnings("ignore")
 
@@ -34,7 +35,7 @@ def main(config):
             config["data_loader"]["store_id"] = store_id
             logger.info("Getting Dataset..")
             start = time.time()
-            X_train, y_train, X_test, y_test = get_dataset(config)
+            X_train, y_train, X_test, y_test = gt_dataset(config)
             end = time.time() - start
             logger.info(f"Done! (elaped:{end} sec!)")
 
@@ -46,20 +47,9 @@ def main(config):
                 eval_set=[(X_test, y_test)],
                 eval_metric="rmse",
                 early_stopping_rounds=5,
+                callbacks = [wandb_callback]
             )
-            y_proba = model.predict(X_train)
-            y_pred = y_proba.argmax(axis=1)
-            train_loss = mean_squared_error(y_train, y_pred)
-            y_proba = model.predict(X_test)
-            y_pred = y_proba.argmax(axis=1)
-            val_loss = mean_squared_error(y_test, y_pred)
             
-            wandb.log(
-                {
-                    'train_loss': train_loss,
-                    'val_loss': val_loss
-                }
-            )
 
         model_name = "lgb_model_" + store_id + "_v" + str(1) + ".bin"
         pickle.dump(model, open(model_name, "wb"))
