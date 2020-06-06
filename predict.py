@@ -79,6 +79,10 @@ def predict():
     all_preds = all_preds.reset_index(drop=True)
     all_preds
 
+    submission = pd.read_csv(ORIGINAL+'sample_submission.csv')[['id']]
+    submission = submission.merge(all_preds, on=['id'], how='left').fillna(0)
+    submission.to_csv('submission_v'+str(VER)+'.csv', index=False)
+
 
 if __name__ == "__main__":
     predict()
